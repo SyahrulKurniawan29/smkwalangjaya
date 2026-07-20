@@ -1,0 +1,5 @@
+feat(initial-scaffold): scaffold Laravel + Inertia + Vue + basic modules
+
+Adds initial scaffold (models, migrations, seeders, controllers, Inertia pages, policies) for SMK Walang Jaya project.
+
+See PULL_REQUEST_DESCRIPTION.md for full details and checklist.
