@@ -25,10 +25,16 @@ Route::middleware(['auth'])->group(function () {
     // Attendance: wali_kelas & admin
     Route::post('/attendance/bulk', [AttendanceController::class, 'storeBulk'])->name('attendance.storeBulk')->middleware('role:admin, wali_kelas');
     Route::get('/attendance/{classroom?}', [AttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('/attendance/create', function () { return inertia('Attendance/Create', ['classes' => \App\Models\ClassRoom::all()]); })->name('attendance.create')->middleware('role:admin, wali_kelas');
 
     // Counseling: guru_bk and admin can create; others can view limited
     Route::resource('counseling', CounselingController::class)->only(['index','create','store','show'])->names('counseling');
 
     // Counseling notes
     Route::post('/counseling/{session}/notes', [CounselingNoteController::class, 'store'])->name('counseling.notes.store');
+});
+
+// API route used by attendance create page to fetch students
+Route::get('/api/classrooms/{classroom}/students', function (\App\Models\ClassRoom $classroom) {
+    return $classroom->students()->get();
 });

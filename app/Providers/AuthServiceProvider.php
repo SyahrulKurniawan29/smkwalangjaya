@@ -5,7 +5,11 @@ namespace App\Providers;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\CounselingNote;
+use App\Models\Attendance;
+use App\Models\ClassRoom;
 use App\Policies\CounselingNotePolicy;
+use App\Policies\AttendancePolicy;
+use App\Policies\ClassRoomPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -16,6 +20,8 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         CounselingNote::class => CounselingNotePolicy::class,
+        Attendance::class => AttendancePolicy::class,
+        ClassRoom::class => ClassRoomPolicy::class,
     ];
 
     /**
@@ -25,6 +31,6 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        // You can register additional gates here if needed.
+        // Additional gates can be registered here if necessary.
     }
 }
