@@ -19,11 +19,20 @@ class AttendanceController extends Controller
 
         $classrooms = ClassRoom::with('students')->get();
 
-        $attendances = Attendance::with('student')
+        $query = Attendance::with('student')
             ->when($classroomId, fn($q) => $q->where('classroom_id', $classroomId))
             ->whereBetween('date', [$from, $to])
-            ->orderBy('date','desc')
-            ->paginate(30);
+            ->orderBy('date','desc');
+
+        // If user is wali_kelas, restrict to their classroom
+        if (optional(auth()->user()->role)->name === 'wali_kelas') {
+            $userClassId = auth()->user()->classroom_id;
+            if ($userClassId) {
+                $query->where('classroom_id', $userClassId);
+            }
+        }
+
+        $attendances = $query->paginate(30);
 
         return Inertia::render('Attendance/Index', compact('attendances','classrooms'));
     }
@@ -40,6 +49,14 @@ class AttendanceController extends Controller
             'records.*.status' => 'required|in:present,sick,permission,absent',
             'records.*.note' => 'nullable|string',
         ]);
+
+        // enforce wali_kelas can only write for their class
+        if (optional(auth()->user()->role)->name === 'wali_kelas') {
+            $userClassId = auth()->user()->classroom_id;
+            if (!$userClassId || $userClassId != $data['classroom_id']) {
+                abort(403, 'Anda tidak memiliki akses untuk mengisi absensi pada kelas ini.');
+            }
+        }
 
         foreach ($data['records'] as $rec) {
             Attendance::updateOrCreate(

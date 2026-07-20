@@ -19,10 +19,20 @@ class AttendancePolicy
     {
         $role = optional($user->role)->name;
         if ($role === 'admin') return true;
+
+        // Wali kelas can view attendances for their class (either assigned via classroom_id or as homeroom_teacher)
         if ($role === 'wali_kelas') {
-            // Wali kelas can view attendances for their class
-            return $user->id === optional($attendance->classroom)->homeroom_teacher_id || $attendance->classroom_id === optional($user->classroom)->id;
+            $userClassId = $user->classroom_id;
+            $attendanceClassId = $attendance->classroom_id;
+            if ($userClassId && $userClassId === $attendanceClassId) return true;
+
+            // Also allow if user is the homeroom teacher for the classroom
+            $homeroomId = optional($attendance->classroom)->homeroom_teacher_id;
+            if ($homeroomId && $homeroomId === $user->id) return true;
+
+            return false;
         }
+
         if ($role === 'guru_bk') return true; // BK can view for counseling context
         return false;
     }
