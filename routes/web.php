@@ -5,6 +5,7 @@ use App\Http\Controllers\ClassRoomController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\CounselingController;
+use App\Http\Controllers\CounselingNoteController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -27,4 +28,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Counseling: guru_bk and admin can create; others can view limited
     Route::resource('counseling', CounselingController::class)->only(['index','create','store','show'])->names('counseling');
+
+    // Counseling notes
+    Route::post('/counseling/{session}/notes', [CounselingNoteController::class, 'store'])->name('counseling.notes.store');
 });

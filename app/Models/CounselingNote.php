@@ -12,4 +12,5 @@ class CounselingNote extends Model
     protected $fillable = ['session_id','note_text','created_by','confidential'];
 
     public function session() { return $this->belongsTo(CounselingSession::class, 'session_id'); }
+    public function attachments() { return $this->hasMany(Attachment::class, 'note_id'); }
 }
