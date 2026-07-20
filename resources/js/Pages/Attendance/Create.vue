@@ -1,6 +1,10 @@
 <template>
   <app-layout>
     <h1 class="text-xl font-bold mb-4">Isi Absensi</h1>
+
+    <div v-if="flash" class="mb-4 p-3 bg-green-100 text-green-800">{{ flash }}</div>
+    <div v-if="errors.general" class="mb-4 p-3 bg-red-100 text-red-800">{{ errors.general }}</div>
+
     <form @submit.prevent="submit">
       <div class="mb-2">
         <label>Kelas</label>
@@ -36,13 +40,20 @@
             </td>
             <td class="border px-4 py-2">
               <input v-model="form.records[idx].note" />
+              <div v-if="errors[`records.${idx}.student_id`]
+              || errors[`records.${idx}.status`]
+              || errors[`records.${idx}.note`]" class="text-sm text-red-600 mt-1">
+                <div v-if="errors[`records.${idx}.student_id`]">{{ errors[`records.${idx}.student_id`] }}</div>
+                <div v-if="errors[`records.${idx}.status`]">{{ errors[`records.${idx}.status`] }}</div>
+                <div v-if="errors[`records.${idx}.note`]">{{ errors[`records.${idx}.note`] }}</div>
+              </div>
             </td>
           </tr>
         </tbody>
       </table>
 
       <div class="mt-4">
-        <button class="btn">Simpan Absensi</button>
+        <button class="btn" :disabled="submitting">{{ submitting ? 'Menyimpan...' : 'Simpan Absensi' }}</button>
       </div>
     </form>
   </app-layout>
@@ -61,21 +72,49 @@ export default {
         classroom_id: this.classes[0]?.id || null,
         date: new Date().toISOString().substr(0,10),
         records: []
-      }
+      },
+      errors: {},
+      submitting: false,
+      flash: null
     }
   },
   mounted() {
     if (this.form.classroom_id) this.loadStudents()
+    // read flash message from server-side session (if any)
+    if (pageProps && pageProps.flash && pageProps.flash.success) {
+      this.flash = pageProps.flash.success
+    }
   },
   methods: {
     async loadStudents() {
-      const res = await axios.get(`/api/classrooms/${this.form.classroom_id}/students`)
-      this.students = res.data
-      this.form.records = this.students.map(s => ({ student_id: s.id, status: 'present', note: '' }))
+      try {
+        const res = await axios.get(`/api/classrooms/${this.form.classroom_id}/students`)
+        this.students = res.data
+        this.form.records = this.students.map(s => ({ student_id: s.id, status: 'present', note: '' }))
+        this.errors = {}
+      } catch (e) {
+        this.errors.general = 'Gagal mengambil daftar siswa.'
+      }
     },
     async submit() {
-      await axios.post('/attendance/bulk', this.form)
-      window.location.href = `/attendance/${this.form.classroom_id}?from=${this.form.date}&to=${this.form.date}`
+      this.submitting = true
+      this.errors = {}
+      try {
+        await axios.post('/attendance/bulk', this.form)
+        window.location.href = `/attendance/${this.form.classroom_id}?from=${this.form.date}&to=${this.form.date}`
+      } catch (err) {
+        if (err.response && err.response.status === 422) {
+          const data = err.response.data.errors || {}
+          // Flatten Laravel-style errors into a simple map
+          Object.keys(data).forEach(k => {
+            this.errors[k] = Array.isArray(data[k]) ? data[k].join(' ') : data[k]
+          })
+        } else {
+          this.errors.general = 'Terjadi kesalahan saat menyimpan. Coba lagi.'
+        }
+      } finally {
+        this.submitting = false
+      }
     }
   }
 }

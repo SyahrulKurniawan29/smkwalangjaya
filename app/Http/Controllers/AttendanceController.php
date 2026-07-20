@@ -12,6 +12,8 @@ class AttendanceController extends Controller
 {
     public function index(Request $request, $classroomId = null)
     {
+        $this->authorize('viewAny', Attendance::class);
+
         $from = $request->query('from', now()->toDateString());
         $to = $request->query('to', now()->toDateString());
 
@@ -28,6 +30,8 @@ class AttendanceController extends Controller
 
     public function storeBulk(Request $request)
     {
+        $this->authorize('create', Attendance::class);
+
         $data = $request->validate([
             'classroom_id' => 'required|exists:classrooms,id',
             'date' => 'required|date',
